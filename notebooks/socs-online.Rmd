@@ -12,6 +12,12 @@ knitr::opts_chunk$set(echo = TRUE)
 library(haven)
 library(tidyverse)
 library(feather)
+library(psych)
+library(ggcorrplot)
+library(viridis)
+library(jtools)
+library(lavaan)
+library(broom)
 ```
 
 ```{r}
@@ -56,5 +62,230 @@ subscale_german_df <- filtered_german_df %>%
 ```{r}
 subscale_german_df %>% 
   write_feather("../results/socs_responses.feather")
+```
+
+## SOCS-O
+
+```{r}
+socs_o_wide <- subscale_german_df %>% 
+  filter(str_detect(item, "SOCS_O")) %>% 
+  mutate(response = as.numeric(response)) %>%
+  pivot_wider(values_from = response, id_cols = ResponseId, names_from = item) %>% 
+  filter_all(all_vars(!is.na(.))) %>% 
+  select(-ResponseId)
+
+socs_o_wide
+```
+
+```{r}
+describe(socs_o_wide)
+```
+
+```{r}
+socs_o_cor <- polychoric(socs_o_wide)
+socs_o_cor
+```
+
+```{r}
+ggcorrplot(socs_o_cor$rho, ggtheme=theme_apa()) +
+  scale_fill_viridis()
+```
+
+```{r}
+eigen(socs_o_cor$rho)$values
+```
+
+```{r}
+one_factor_model <- str_c("compassion =~ ", str_c(colnames(socs_o_wide), collapse = " + "))
+one_factor_model
+```
+
+```{r}
+one_factor_cfa <- cfa(
+  one_factor_model, 
+  data=socs_o_wide, 
+  estimator="MLR"
+  )
+one_factor_cfa
+```
+
+```{r}
+one_factor_glance <- glance(one_factor_cfa)
+one_factor_glance
+```
+
+```{r}
+five_factor_model <- '
+recognizing_suffering =~ SOCS_O_1 + SOCS_O_6 + SOCS_O_11 + SOCS_O_16
+universality_of_suffering =~ SOCS_O_2 + SOCS_O_7 + SOCS_O_12 + SOCS_O_17
+feeling_of_suffering =~ SOCS_O_3 + SOCS_O_8 + SOCS_O_13 + SOCS_O_18
+tolerating_discomfort =~ SOCS_O_4 + SOCS_O_9 + SOCS_O_14 + SOCS_O_19
+alleviate_suffering =~ SOCS_O_5 + SOCS_O_10 + SOCS_O_15 + SOCS_O_20'
+```
+
+```{r}
+five_factor_cfa <- cfa(
+  five_factor_model, 
+  data=socs_o_wide, 
+  estimator="MLR"
+  )
+five_factor_cfa
+```
+
+```{r}
+five_factor_glance <- glance(five_factor_cfa)
+five_factor_glance
+```
+
+```{r}
+five_factor_parameters <- tidy(five_factor_cfa)
+five_factor_parameters
+```
+
+```{r}
+hierarchical_factor_model <- '
+recognizing_suffering =~ SOCS_O_1 + SOCS_O_6 + SOCS_O_11 + SOCS_O_16
+universality_of_suffering =~ SOCS_O_2 + SOCS_O_7 + SOCS_O_12 + SOCS_O_17
+feeling_of_suffering =~ SOCS_O_3 + SOCS_O_8 + SOCS_O_13 + SOCS_O_18
+tolerating_discomfort =~ SOCS_O_4 + SOCS_O_9 + SOCS_O_14 + SOCS_O_19
+alleviate_suffering =~ SOCS_O_5 + SOCS_O_10 + SOCS_O_15 + SOCS_O_20
+compassion =~ recognizing_suffering + universality_of_suffering + feeling_of_suffering + tolerating_discomfort + alleviate_suffering
+'
+```
+
+```{r}
+hierarchical_factor_cfa <- cfa(
+  hierarchical_factor_model, 
+  data=socs_o_wide, 
+  estimator="MLR"
+  )
+hierarchical_factor_cfa
+```
+```{r}
+hierarchical_factor_glance <- glance(hierarchical_factor_cfa)
+hierarchical_factor_glance
+```
+
+```{r}
+bind_rows(
+  one_factor_glance,
+  five_factor_glance,
+  hierarchical_factor_glance
+)
+```
+
+## SOCS-S
+
+```{r}
+socs_s_wide <- subscale_german_df %>% 
+  filter(str_detect(item, "SOCS_S")) %>% 
+  mutate(response = as.numeric(response)) %>%
+  pivot_wider(values_from = response, id_cols = ResponseId, names_from = item) %>% 
+  filter_all(all_vars(!is.na(.))) %>% 
+  select(-ResponseId)
+
+socs_s_wide
+```
+
+```{r}
+describe(socs_s_wide)
+```
+
+```{r}
+socs_s_cor <- polychoric(socs_s_wide)
+socs_s_cor
+```
+
+```{r}
+ggcorrplot(socs_s_cor$rho, ggtheme=theme_apa()) +
+  scale_fill_viridis()
+```
+
+```{r}
+eigen(socs_s_cor$rho)$values
+```
+
+```{r}
+one_factor_model <- str_c("compassion =~ ", str_c(colnames(socs_s_wide), collapse = " + "))
+one_factor_model
+```
+
+```{r}
+one_factor_cfa <- cfa(
+  one_factor_model, 
+  data=socs_s_wide, 
+  estimator="MLR"
+  )
+one_factor_cfa
+```
+
+```{r}
+one_factor_glance <- glance(one_factor_cfa)
+one_factor_glance
+```
+
+```{r}
+five_factor_model <- '
+recognizing_suffering =~ SOCS_S_1 + SOCS_S_6 + SOCS_S_11 + SOCS_S_16
+universality_of_suffering =~ SOCS_S_2 + SOCS_S_7 + SOCS_S_12 + SOCS_S_17
+feeling_of_suffering =~ SOCS_S_3 + SOCS_S_8 + SOCS_S_13 + SOCS_S_18
+tolerating_discomfort =~ SOCS_S_4 + SOCS_S_9 + SOCS_S_14 + SOCS_S_19
+alleviate_suffering =~ SOCS_S_5 + SOCS_S_10 + SOCS_S_15 + SOCS_S_20'
+```
+
+```{r}
+five_factor_cfa <- cfa(
+  five_factor_model, 
+  data=socs_s_wide, 
+  estimator="MLR"
+  )
+five_factor_cfa
+```
+
+```{r}
+five_factor_glance <- glance(five_factor_cfa)
+five_factor_glance
+```
+
+```{r}
+five_factor_parameters <- tidy(five_factor_cfa)
+five_factor_parameters
+```
+
+```{r}
+hierarchical_factor_model <- '
+recognizing_suffering =~ SOCS_S_1 + SOCS_S_6 + SOCS_S_11 + SOCS_S_16
+universality_of_suffering =~ SOCS_S_2 + SOCS_S_7 + SOCS_S_12 + SOCS_S_17
+feeling_of_suffering =~ SOCS_S_3 + SOCS_S_8 + SOCS_S_13 + SOCS_S_18
+tolerating_discomfort =~ SOCS_S_4 + SOCS_S_9 + SOCS_S_14 + SOCS_S_19
+alleviate_suffering =~ SOCS_S_5 + SOCS_S_10 + SOCS_S_15 + SOCS_S_20
+compassion =~ recognizing_suffering + universality_of_suffering + feeling_of_suffering + tolerating_discomfort + alleviate_suffering
+'
+```
+
+```{r}
+hierarchical_factor_cfa <- cfa(
+  hierarchical_factor_model, 
+  data=socs_s_wide, 
+  estimator="MLR"
+  )
+hierarchical_factor_cfa
+```
+```{r}
+hierarchical_factor_glance <- glance(hierarchical_factor_cfa)
+hierarchical_factor_glance
+```
+
+```{r}
+bind_rows(
+  one_factor_glance,
+  five_factor_glance,
+  hierarchical_factor_glance
+)
+```
+
+
+```{r}
+sessionInfo()
 ```
 
