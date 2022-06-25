@@ -1,0 +1,29 @@
+---
+title: "German SOCS"
+output: html_document
+date: '2022-06-25'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(haven)
+library(tidyverse)
+```
+
+```{r}
+german_df <- read_sav("../data/Compassion-DE – Copy Snowball_24 June 2022_23.45.sav")
+```
+
+```{r}
+german_df
+```
+
+```{r}
+filtered_german_df <- german_df %>% 
+  filter(SOCS_O_10 == 4) %>% 
+  filter(CEAS_TO1_4 == 10)
+```
+
