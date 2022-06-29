@@ -1,0 +1,77 @@
+---
+title: "demographics"
+output:
+  pdf_document: default
+  html_document: default
+date: '2022-06-28'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(haven)
+```
+
+
+```{r}
+german_df <- read_sav("../data/Compassion-DE_24 June 2022_23.31.sav")
+```
+
+```{r}
+german_df
+```
+
+```{r}
+filtered_german_df <- german_df %>% 
+  filter(SOCS_O_10 == 4) %>% 
+  filter(CEAS_TO1_4 == 10) %>% 
+  filter(!is.na(DEM4))
+
+# Gender
+
+filtered_german_df %>%
+  mutate(DEM4 = as_factor(DEM4)) %>% 
+  count(DEM4) %>% 
+  mutate(prop = round(n/sum(n),2))
+```
+```{r}
+# Native German
+
+filtered_german_df %>%
+  filter(!is.na(DEM2)) %>% 
+  mutate(DEM2 = as_factor(DEM2)) %>% 
+  count(DEM2) %>% 
+  mutate(prop = round(n/sum(n),2))
+```
+```{r}
+# Native German
+
+filtered_german_df %>%
+  filter(!is.na(DEM2A)) %>% 
+  mutate(DEM2A = as_factor(DEM2A)) %>% 
+  count(DEM2A) %>% 
+  mutate(prop = round(n/sum(n),2))
+```
+
+```{r}
+filtered_german_df %>%
+  transmute(DEM3 = as.numeric(DEM3)) %>% 
+  filter(!is.na(DEM3)) %>% 
+  summarise(mean(DEM3), min(DEM3), max(DEM3))
+```
+
+```{r}
+filtered_german_df %>% 
+  transmute(DEM1 = as.numeric(DEM1)) %>% 
+  filter(!is.na(DEM1)) %>% 
+  summarise(mean(DEM1), min(DEM1), max(DEM1))
+```
+
+
+```{r}
+sessionInfo()
+```
+

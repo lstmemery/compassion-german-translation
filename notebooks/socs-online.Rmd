@@ -1,6 +1,8 @@
 ---
 title: "Online German"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 date: '2022-06-25'
 ---
 
@@ -18,6 +20,7 @@ library(viridis)
 library(jtools)
 library(lavaan)
 library(broom)
+library(huxtable)
 ```
 
 ```{r}
@@ -133,13 +136,17 @@ five_factor_cfa
 ```
 
 ```{r}
-five_factor_glance <- glance(five_factor_cfa)
-five_factor_glance
+socs_o_fit_measures <- fitmeasures(
+  five_factor_cfa, 
+  fit.measures = c("chisq", "pvalue", "df", "rmsea", "rmsea.ci.lower", "rmsea.ci.upper", "cfi", "tli"))
+socs_o_fit_measures[["alpha"]] <- socs_o_alpha
+
+socs_o_fit_measures
 ```
 
 ```{r}
-five_factor_parameters <- tidy(five_factor_cfa)
-five_factor_parameters
+five_factor_glance <- glance(five_factor_cfa)
+five_factor_glance
 ```
 
 ```{r}
@@ -167,12 +174,18 @@ hierarchical_factor_glance
 ```
 
 ```{r}
-bind_rows(
+socs_o_fits <- bind_rows(
   one_factor_glance,
   five_factor_glance,
   hierarchical_factor_glance
 )
 ```
+
+```{r}
+socs_o_alpha <- alpha(socs_o_wide)$total$raw_alpha
+socs_o_alpha
+```
+
 
 ## SOCS-S
 
@@ -248,9 +261,21 @@ five_factor_glance
 ```
 
 ```{r}
-five_factor_parameters <- tidy(five_factor_cfa)
-five_factor_parameters
+socs_s_fit_measures <- fitmeasures(
+  five_factor_cfa, 
+  fit.measures = c("chisq", "pvalue", "df", "rmsea", "rmsea.ci.lower", "rmsea.ci.upper", "cfi", "tli"))
+socs_s_fit_measures[["alpha"]] <- socs_s_alpha
 ```
+
+```{r}
+socs_s_fit_measures
+```
+
+```{r}
+fitmeasures(
+  five_factor_cfa)
+```
+
 
 ```{r}
 hierarchical_factor_model <- '
@@ -272,17 +297,59 @@ hierarchical_factor_cfa <- cfa(
 hierarchical_factor_cfa
 ```
 ```{r}
+hierarchical_factor_fit <- fitmeasures(hierarchical_factor_cfa)
+hierarchical_factor_fit["pvalue"]
+```
+
+
+
+```{r}
 hierarchical_factor_glance <- glance(hierarchical_factor_cfa)
 hierarchical_factor_glance
 ```
 
 ```{r}
-bind_rows(
+socs_s_fits <- bind_rows(
   one_factor_glance,
   five_factor_glance,
   hierarchical_factor_glance
 )
 ```
+
+```{r}
+socs_s_alpha <- alpha(socs_s_wide)$total$raw_alpha
+socs_s_alpha
+```
+
+
+```{r}
+model_names <- c("One Factor", "Five Factor", "Hierarchical")
+socs_s_fits %>% 
+  bind_cols(model_name = model_names) %>% 
+  select()
+```
+## Constructing Figure
+
+```{r}
+bind_rows(socs_o_fit_measures, socs_s_fit_measures) %>% 
+  transmute(
+    Scale = c("SOCS-O", "SOCS-S"), 
+    α = round(alpha, 2),
+    Model = "5 > 1, second order",
+    `χ²` = str_c(round(chisq, 2), " (p < 0.001)"),
+    Df = df,
+    `RMSEA [90% C.I.]` = str_c(round(rmsea, 2), " [", round(rmsea.ci.lower, 2), ", ", round(rmsea.ci.upper, 2), "]"),
+    CFI = round(cfi, 2),
+    TLI = round(tli, 2),
+    ) %>% 
+  as_huxtable() %>% 
+  theme_grey() %>% 
+  quick_docx()
+```
+
+
+
+
 
 
 ```{r}
