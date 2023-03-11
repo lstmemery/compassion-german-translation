@@ -1,0 +1,72 @@
+---
+title: ""
+format: docx
+editor: visual
+params:
+  data: "../results/socs_o_tidy.feather"
+  model: "../models/socs_o_one_factor.json"
+---
+
+```{r, echo=FALSE, message=FALSE}
+library(tidyverse)
+library(jsonlite)
+library(feather)
+library(knitr)
+library(flextable)
+source("../R/funcs.R")
+```
+```{r}
+model_info <- read_json(params$model)
+model_info
+```
+
+# r`model_info$scale_name` `model_info$model_name`
+
+```{r}
+tidy_df <- read_feather(params$data)
+```
+
+```{r}
+scale_name <- model_info$scale_name
+model_name <- model_info$model_name
+model_string <- model_info$model_string
+```
+
+
+```{r}
+df <- tidy_df %>% 
+  pivot_wider(values_from = response, id_cols = ResponseId, names_from = item)
+```
+
+```{r}
+df_cor <- round(cor(df %>% select(-ResponseId), method="spearman"), 2)
+kable(df_cor)
+```
+
+```{r}
+eigen(df_cor)$values
+```
+
+```{r}
+cfa_fit <- fit_cfa(model_string, df)
+```
+
+```{r}
+interpret_fit(cfa_fit)
+```
+
+```{r}
+report_fit_chi(cfa_fit)
+```
+
+```{r}
+report_fit_less_chi(cfa_fit)
+```
+
+```{r}
+format_sem_paths(cfa_fit, scale_name, model_name)
+```
+
+```{r}
+format_huxtable(format_cfa_parameters(cfa_fit))
+```

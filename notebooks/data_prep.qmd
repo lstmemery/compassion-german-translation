@@ -1,0 +1,63 @@
+---
+title: "Data Prep"
+format: html
+editor: visual
+---
+
+```{r}
+library(haven)
+library(tidyverse)
+library(feather)
+library(psych)
+library(ggcorrplot)
+library(viridis)
+library(jtools)
+library(lavaan)
+library(broom)
+library(huxtable)
+```
+
+```{r}
+german_df <- read_sav("../data/Compassion-DE_24 June 2022_23.31.sav")
+```
+
+```{r}
+german_df
+```
+
+```{r}
+filtered_german_df <- german_df %>% 
+  filter(SOCS_O_10 == 4) %>% 
+  filter(CEAS_TO1_4 == 10)
+
+filtered_german_df
+```
+
+
+
+```{r}
+socs_o_df <- filtered_german_df %>% 
+  select(ResponseId, starts_with("SOCS_O")) %>% 
+  pivot_longer(-ResponseId, names_to = "item", values_to = "response") %>% 
+  filter(item != "SOCS_O_10") %>% 
+  mutate(item_number = if_else(as.numeric(str_extract(item, "\\d+")) > 10 & str_detect(item, "SOCS_O"), as.numeric(str_extract(item, "\\d+")) - 1, as.numeric(str_extract(item, "\\d+")))) %>% 
+  mutate(item = if_else(str_detect(item, "SOCS_O"), str_c("SOCS-O_", item_number), item)) %>% 
+  select(-item_number) %>% 
+  group_by(ResponseId) %>% 
+  filter(!any(is.na(response))) %>% 
+  ungroup() %>% 
+  mutate(item = str_replace(item, "-", "_")) %>% 
+  mutate(sub_scale = case_when(
+    item %in% c("SOCS_O_1", "SOCS_O_6", "SOCS_O_11", "SOCS_O_16") ~ "SOCS_O_Recognizing_Suffering",
+    item %in% c("SOCS_O_2", "SOCS_O_7", "SOCS_O_12", "SOCS_O_17") ~ "SOCS_O_Understanding_Suffering",
+    item %in% c("SOCS_O_3", "SOCS_O_8", "SOCS_O_13", "SOCS_O_18") ~ "SOCS_O_Feeling_Suffering",
+    item %in% c("SOCS_O_4", "SOCS_O_9", "SOCS_O_14", "SOCS_O_19") ~ "SOCS_O_Tolerating_Feelings",
+    item %in% c("SOCS_O_5", "SOCS_O_10", "SOCS_O_15", "SOCS_O_20") ~ "SOCS_O_Acting_To_Alleviate"
+  ))
+```
+
+```{r}
+socs_o_df %>% 
+  write_feather("../results/socs_o_tidy.feather")
+```
+
