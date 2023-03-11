@@ -88,3 +88,24 @@ sample_n(socs_s_df, 10)
 socs_s_df %>% 
   write_feather("../results/socs_s_tidy.feather")
 ```
+
+## CEAS-TO
+
+```{r}
+ceas_to_df <- filtered_german_df %>%
+  select(ResponseId, starts_with("CEAS_TO")) %>% 
+  mutate(across(starts_with("CEAS"), as.numeric)) %>% 
+  pivot_longer(-ResponseId, names_to = "item", values_to = "response") %>% 
+  filter(item != "CEAS_TO1_4") %>% 
+  mutate(item_number = if_else(as.numeric(str_extract(item, "\\d+$")) > 4 & str_detect(item, "CEAS_TO1"), as.numeric(str_extract(item, "\\d+$")) - 1, as.numeric(str_extract(item, "\\d+$")))) %>% 
+  mutate(item = if_else(str_detect(item, "CEAS_TO1"), str_c("CEAS_TO1_", item_number), item)) %>% 
+  select(-item_number) %>%
+  group_by(ResponseId) %>%
+  filter(!any(is.na(response))) %>%
+  ungroup()
+```
+
+```{r}
+ceas_to_df %>% 
+  write_feather("../results/ceas_to_tidy.feather")
+```

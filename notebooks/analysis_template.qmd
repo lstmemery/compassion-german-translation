@@ -89,3 +89,16 @@ format_sem_paths(cfa_fit, scale_name, model_name)
 ```{r}
 format_huxtable(format_cfa_parameters(cfa_fit))
 ```
+## Omegas
+
+```{r}
+omegas <- get_omegas(cfa_fit)
+omegas
+```
+
+## Session Information
+
+```{r}
+sessionInfo()
+```
+
