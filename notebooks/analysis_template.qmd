@@ -1,7 +1,9 @@
 ---
 title: ""
-format: html
+format: docx
 editor: visual
+execute: 
+  echo: false
 params:
   data: "../results/socs_o_tidy.feather"
   model: "../models/socs_o_one_factor.json"
@@ -38,10 +40,14 @@ df <- tidy_df %>%
   pivot_wider(values_from = response, id_cols = ResponseId, names_from = item)
 ```
 
-```{r, correlation}
-df_cor <- polychoric(df)
+## Correlation
+
+```{r, correlation, fig.width=16, fig.height=9}
+df_cor <- polychoric(df %>% select(-ResponseId))
 format_correlation(df_cor$rho, str_c(scale_name, " Polychoric"))
 ```
+
+## Eigenvalues (none should negative)
 
 ```{r}
 eigen(df_cor$rho)$values
@@ -50,6 +56,8 @@ eigen(df_cor$rho)$values
 ```{r}
 cfa_fit <- fit_cfa(model_string, df)
 ```
+
+## Interpret fit
 
 ```{r}
 interpret_fit(cfa_fit)
@@ -64,9 +72,13 @@ fit_measure <- lav_fit_measures(cfa_fit, df, scale_name, model_name)
 fit_measure
 ```
 
+## SEM Paths
+
 ```{r}
 format_sem_paths(cfa_fit, scale_name, model_name)
 ```
+
+## Model Parameters
 
 ```{r}
 format_huxtable(format_cfa_parameters(cfa_fit))

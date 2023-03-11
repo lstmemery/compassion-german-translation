@@ -153,6 +153,7 @@ format_correlation <- function(corr, title) {
     title = title,
     legend.title = "Correlation",
     lab =TRUE,
+    show.legend = FALSE
   )
 }
 
