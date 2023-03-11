@@ -123,3 +123,27 @@ ceas_sc_df <- filtered_german_df %>%
 ceas_sc_df %>% 
   write_feather("../results/ceas_sc_tidy.feather")
 ```
+
+## CEAS-FROM
+
+```{r}
+ceas_from_df <- filtered_german_df %>%
+  select(ResponseId, starts_with("CEAS_FROM")) %>% 
+  mutate(across(starts_with("CEAS"), as.numeric)) %>% 
+  pivot_longer(-ResponseId, names_to = "item", values_to = "response") %>% 
+  group_by(ResponseId) %>%
+  filter(!any(is.na(response))) %>%
+  ungroup()
+```
+
+```{r}
+ceas_from_df %>% 
+  write_feather("../results/ceas_from_tidy.feather")
+```
+
+## Session Information
+
+```{r}
+sessionInfo()
+```
+

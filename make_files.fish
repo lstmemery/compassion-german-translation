@@ -19,3 +19,6 @@ render_docx ceas_sc_tidy ceas_sc_two_factor
 render_docx ceas_sc_tidy ceas_sc_second_order
 render_docx ceas_sc_tidy ceas_sc_three_factor
 render_docx ceas_sc_tidy ceas_sc_third_order
+render_docx ceas_from_tidy ceas_from_one_factor
+render_docx ceas_from_tidy ceas_from_two_factor
+render_docx ceas_from_tidy ceas_from_hierarchical

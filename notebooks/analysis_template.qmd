@@ -60,12 +60,11 @@ format_correlation(cor_matrix, str_c(scale_name, cor_method, sep = " "))
 eigen(cor_matrix)$values
 ```
 
+## Interpret fit
+
 ```{r}
 cfa_fit <- fit_cfa(model_string, df)
 ```
-
-
-## Interpret fit
 
 ```{r}
 if (cfa_fit@Fit@converged) {
