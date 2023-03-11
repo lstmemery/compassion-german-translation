@@ -38,6 +38,7 @@ filtered_german_df
 ```{r}
 socs_o_df <- filtered_german_df %>% 
   select(ResponseId, starts_with("SOCS_O")) %>% 
+  mutate(across(starts_with("SOCS"), as.numeric)) %>% 
   pivot_longer(-ResponseId, names_to = "item", values_to = "response") %>% 
   filter(item != "SOCS_O_10") %>% 
   mutate(item_number = if_else(as.numeric(str_extract(item, "\\d+")) > 10 & str_detect(item, "SOCS_O"), as.numeric(str_extract(item, "\\d+")) - 1, as.numeric(str_extract(item, "\\d+")))) %>% 
@@ -61,3 +62,29 @@ socs_o_df %>%
   write_feather("../results/socs_o_tidy.feather")
 ```
 
+
+## SOCS-S
+
+```{r}
+socs_s_df <- filtered_german_df %>% 
+  select(ResponseId, starts_with("SOCS_S")) %>% 
+  mutate(across(starts_with("SOCS"), as.numeric)) %>% 
+  pivot_longer(-ResponseId, names_to = "item", values_to = "response") %>% 
+  group_by(ResponseId) %>%
+  filter(!any(is.na(response))) %>%
+  ungroup() %>% 
+  mutate(sub_scale = case_when(
+    item %in% c("SOCS_S_1", "SOCS_S_6", "SOCS_S_11", "SOCS_S_16") ~ "SOCS_S_Recognizing_Suffering",
+    item %in% c("SOCS_S_2", "SOCS_S_7", "SOCS_S_12", "SOCS_S_17") ~ "SOCS_S_Understanding_Suffering",
+    item %in% c("SOCS_S_3", "SOCS_S_8", "SOCS_S_13", "SOCS_S_18") ~ "SOCS_S_Feeling_Suffering",
+    item %in% c("SOCS_S_4", "SOCS_S_9", "SOCS_S_14", "SOCS_S_19") ~ "SOCS_S_Tolerating_Feelings",
+    item %in% c("SOCS_S_5", "SOCS_S_10", "SOCS_S_15", "SOCS_S_20") ~ "SOCS_S_Acting_To_Alleviate"
+  ))
+
+sample_n(socs_s_df, 10)
+```
+
+```{r}
+socs_s_df %>% 
+  write_feather("../results/socs_s_tidy.feather")
+```

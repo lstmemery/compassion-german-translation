@@ -6,7 +6,7 @@ execute:
   echo: false
 params:
   data: "../results/socs_o_tidy.feather"
-  model: "../models/socs_o_one_factor.json"
+  model: "../models/socs_o_five_factor.json"
 ---
 
 ```{r, echo=FALSE, message=FALSE}
@@ -57,19 +57,25 @@ eigen(df_cor$rho)$values
 cfa_fit <- fit_cfa(model_string, df)
 ```
 
+
 ## Interpret fit
 
 ```{r}
-interpret_fit(cfa_fit)
+if (cfa_fit@Fit@converged) {
+  interpret_fit(cfa_fit)
+} else {
+  print("No convergence.")
+}
+
 ```
 
-```{r}
-# report_performance(cfa_fit)
-```
 
 ```{r}
-fit_measure <- lav_fit_measures(cfa_fit, df, scale_name, model_name)
-fit_measure
+if (cfa_fit@Fit@converged) {
+  lav_fit_measures(cfa_fit, df, scale_name, model_name)
+} else {
+  print("No convergence.")
+}
 ```
 
 ## SEM Paths

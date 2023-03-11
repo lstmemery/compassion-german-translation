@@ -67,10 +67,11 @@ get_alpha <- function(df) {
 
 fit_cfa <- function(model, df) {
   cfa(
-    model, 
+    model_string, 
     data=df,
     estimator="MLR",
-    std.lv=TRUE
+    std.lv=TRUE,
+    se="robust"
   )
 }
 

@@ -8,3 +8,6 @@ end
 render_docx socs_o_tidy socs_o_one_factor
 render_docx socs_o_tidy socs_o_five_factor
 render_docx socs_o_tidy socs_o_hierarchical
+render_docx socs_s_tidy socs_s_one_factor
+render_docx socs_s_tidy socs_s_five_factor
+render_docx socs_s_tidy socs_s_hierarchical
