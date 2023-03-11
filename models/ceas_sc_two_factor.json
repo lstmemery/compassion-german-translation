@@ -1,0 +1,5 @@
+{
+	"scale_name": "CEAS-SC",
+	"model_name": "Two Factor",
+	"model_string": "CEAS_SC_Engagement =~ CEAS_SC1_1 + CEAS_SC1_2 + CEAS_SC1_3 + CEAS_SC1_4 + CEAS_SC1_5 + CEAS_SC1_6\nCEAS_SC_Action =~ CEAS_SC2_1 + CEAS_SC2_2 + CEAS_SC2_3 + CEAS_SC2_4"
+}

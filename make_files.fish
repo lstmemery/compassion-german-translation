@@ -14,3 +14,8 @@ render_docx socs_s_tidy socs_s_hierarchical
 render_docx ceas_to_tidy ceas_to_one_factor
 render_docx ceas_to_tidy ceas_to_two_factor
 render_docx ceas_to_tidy ceas_to_hierarchical
+render_docx ceas_sc_tidy ceas_sc_one_factor
+render_docx ceas_sc_tidy ceas_sc_two_factor
+render_docx ceas_sc_tidy ceas_sc_second_order
+render_docx ceas_sc_tidy ceas_sc_three_factor
+render_docx ceas_sc_tidy ceas_sc_third_order

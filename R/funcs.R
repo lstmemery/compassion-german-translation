@@ -70,8 +70,7 @@ fit_cfa <- function(model, df) {
     model_string, 
     data=df,
     estimator="MLR",
-    std.lv=TRUE,
-    se="robust"
+    std.lv=TRUE
   )
 }
 

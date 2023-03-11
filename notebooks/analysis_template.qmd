@@ -5,8 +5,8 @@ editor: visual
 execute: 
   echo: false
 params:
-  data: "../results/socs_o_tidy.feather"
-  model: "../models/socs_o_five_factor.json"
+  data: "../results/ceas_to_tidy.feather"
+  model: "../models/ceas_to_hierarchical.json"
 ---
 
 ```{r, echo=FALSE, message=FALSE}
@@ -17,6 +17,7 @@ library(knitr)
 library(flextable)
 source("../R/funcs.R")
 ```
+
 ```{r}
 model_info <- read_json(params$model)
 model_info
@@ -34,7 +35,6 @@ model_name <- model_info$model_name
 model_string <- model_info$model_string
 ```
 
-
 ```{r}
 df <- tidy_df %>% 
   pivot_wider(values_from = response, id_cols = ResponseId, names_from = item)
@@ -43,14 +43,21 @@ df <- tidy_df %>%
 ## Correlation
 
 ```{r, correlation, fig.width=16, fig.height=9}
-df_cor <- polychoric(df %>% select(-ResponseId))
-format_correlation(df_cor$rho, str_c(scale_name, " Polychoric"))
+if (max(tidy_df$response) > 8) {
+  cor_matrix <- cor(df %>% select(-ResponseId), method="spearman")
+  cor_method <- "Spearman"
+} else {
+  cor_matrix <- polychoric(df %>% select(-ResponseId))$rho
+  cor_method <- "Polychoric"
+}
+
+format_correlation(cor_matrix, str_c(scale_name, cor_method, sep = " "))
 ```
 
 ## Eigenvalues (none should negative)
 
 ```{r}
-eigen(df_cor$rho)$values
+eigen(cor_matrix)$values
 ```
 
 ```{r}
@@ -68,7 +75,6 @@ if (cfa_fit@Fit@converged) {
 }
 
 ```
-
 
 ```{r}
 if (cfa_fit@Fit@converged) {
@@ -89,6 +95,7 @@ format_sem_paths(cfa_fit, scale_name, model_name)
 ```{r}
 format_huxtable(format_cfa_parameters(cfa_fit))
 ```
+
 ## Omegas
 
 ```{r}
@@ -101,4 +108,3 @@ omegas
 ```{r}
 sessionInfo()
 ```
-

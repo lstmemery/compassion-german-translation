@@ -33,8 +33,6 @@ filtered_german_df <- german_df %>%
 filtered_german_df
 ```
 
-
-
 ```{r}
 socs_o_df <- filtered_german_df %>% 
   select(ResponseId, starts_with("SOCS_O")) %>% 
@@ -61,7 +59,6 @@ socs_o_df <- filtered_german_df %>%
 socs_o_df %>% 
   write_feather("../results/socs_o_tidy.feather")
 ```
-
 
 ## SOCS-S
 
@@ -108,4 +105,21 @@ ceas_to_df <- filtered_german_df %>%
 ```{r}
 ceas_to_df %>% 
   write_feather("../results/ceas_to_tidy.feather")
+```
+
+## CEAS-SC
+
+```{r}
+ceas_sc_df <- filtered_german_df %>%
+  select(ResponseId, starts_with("CEAS_SC")) %>% 
+  mutate(across(starts_with("CEAS"), as.numeric)) %>% 
+  pivot_longer(-ResponseId, names_to = "item", values_to = "response") %>% 
+  group_by(ResponseId) %>%
+  filter(!any(is.na(response))) %>%
+  ungroup()
+```
+
+```{r}
+ceas_sc_df %>% 
+  write_feather("../results/ceas_sc_tidy.feather")
 ```

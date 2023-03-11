@@ -1,5 +1,5 @@
 {
 	"scale_name": "CEAS-TO",
 	"model_name": "Hierarchical",
-	"model_string": "CEAS_TO_Engagement =~ CEAS_TO1_1 + CEAS_TO1_2 + CEAS_TO1_4 + CEAS_TO1_5 + CEAS_TO1_6 + CEAS_TO1_8\nCEAS_TO_Action =~ CEAS_TO2_1 + CEAS_TO2_2 + CEAS_TO2_4 + CEAS_TO2_5\nCEAS_TO =~ CEAS_TO_Engagement + CEAS_TO_Action"
+	"model_string": "CEAS_TO_Engagement =~ CEAS_TO1_1 + CEAS_TO1_2 + CEAS_TO1_3 + CEAS_TO1_4 + CEAS_TO1_5 + CEAS_TO1_6\nCEAS_TO_Action =~ CEAS_TO2_1 + CEAS_TO2_2 + CEAS_TO2_3 + CEAS_TO2_4\nCEAS_TO =~ CEAS_TO_Engagement + CEAS_TO_Action"
 }
