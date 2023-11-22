@@ -17,7 +17,7 @@ library(haven)
 
 
 ```{r}
-german_df <- read_sav("../data/Compassion-DE_24 June 2022_23.31.sav")
+german_df <- read_sav("../data/Compassion-DE_19 November 2023_19.42.sav")
 ```
 
 ```{r}
@@ -28,46 +28,225 @@ german_df
 filtered_german_df <- german_df %>% 
   filter(SOCS_O_10 == 4) %>% 
   filter(CEAS_TO1_4 == 10) %>% 
-  filter(!is.na(DEM4))
-
-# Gender
-
-filtered_german_df %>%
-  mutate(DEM4 = as_factor(DEM4)) %>% 
-  count(DEM4) %>% 
-  mutate(prop = round(n/sum(n),2))
-```
-```{r}
-# Native German
-
-filtered_german_df %>%
-  filter(!is.na(DEM2)) %>% 
-  mutate(DEM2 = as_factor(DEM2)) %>% 
-  count(DEM2) %>% 
-  mutate(prop = round(n/sum(n),2))
-```
-```{r}
-# Native German
-
-filtered_german_df %>%
-  filter(!is.na(DEM2A)) %>% 
-  mutate(DEM2A = as_factor(DEM2A)) %>% 
-  count(DEM2A) %>% 
-  mutate(prop = round(n/sum(n),2))
-```
-
-```{r}
-filtered_german_df %>%
-  transmute(DEM3 = as.numeric(DEM3)) %>% 
-  filter(!is.na(DEM3)) %>% 
-  summarise(mean(DEM3), min(DEM3), max(DEM3))
+  filter(SCS_19 == 1) %>%
+  filter(FFMQ_21 == 4)
 ```
 
 ```{r}
 filtered_german_df %>% 
-  transmute(DEM1 = as.numeric(DEM1)) %>% 
-  filter(!is.na(DEM1)) %>% 
-  summarise(mean(DEM1), min(DEM1), max(DEM1))
+  write_csv("../results/german-complete-cases.csv")
+```
+
+
+```{r}
+summarise_numerical <- function(df, column_name, demographic_name) {
+  column_sym <- rlang::ensym(column_name)
+  
+  df %>%
+    transmute(!!column_sym := as.numeric(!!column_sym)) %>% 
+    filter(!is.na(!!column_sym)) %>% 
+    summarise(mean = mean(!!column_sym), 
+              std_dev = sd(!!column_sym), 
+              min = min(!!column_sym), 
+              max = max(!!column_sym), 
+              N = n()) %>% 
+    mutate(
+      mean = round(mean, 2),
+      std_dev = round(std_dev, 2),
+      name=demographic_name
+    )
+}
+```
+
+```{r}
+numerical_demo_df <- bind_rows(
+  summarise_numerical(filtered_german_df, "DEM3", "Age"),
+  summarise_numerical(filtered_german_df, "DEM1", "Number of Languages")
+)
+  
+numerical_demo_df
+```
+
+```{r}
+summarise_categorical <- function(df, column_name, recode_vector, demo_name) {
+  column_sym <- rlang::ensym(column_name)
+  demo_sym <- rlang::ensym(demo_name)
+
+  summary_df <- df %>%
+    mutate(!!demo_sym := as_factor(!!column_sym, ordered=TRUE)) %>%
+    mutate(Category := fct_recode(!!demo_sym, !!!recode_vector)) %>% 
+    filter(!is.na(Category)) %>% 
+    count(Category) %>% 
+    mutate(prop = round(n/sum(n) * 100, 2))
+  
+  total_df <- summary_df %>% 
+    summarise(n := sum(n)) %>% 
+    mutate(Category := demo_name)
+  
+  bind_rows(
+    total_df,
+    summary_df
+  ) %>% 
+    select(Category, n, prop)
+}
+
+```
+
+```{r}
+gender_recode <- c(Male="Mann",
+      Woman="Frau",
+      Other="von mir präferierte Bezeichnung",
+      Other="bevorzuge nicht zu antworten"
+    )
+```
+
+# Need translated Ethnicity
+
+# Make sure these translations are double-checked
+
+```{r}
+education_recode <- c(
+  "Left school without a secondary school qualification" = "Ich bin von der Schule abgegangen ohne Haupt-/Volksschulabschluss",
+  "completed basic 6/8 years of education" = "Ich habe den Haupt-/Volksschulabschluss (oder frühere 8-klassige Schule)",
+  "secondary school leaving certificate (11th grade, West Germany)" = "Ich habe Mittlere Reife/ Realschulabschluss",
+  "polytechnic high school certificate (10th grade; East Germany)" = "Ich habe den Abschluss der Polytechnischen Oberschule 10. Klasse",
+  "3 years technical college" = "Ich habe den Fachschulabschluss (ohne Anerkennung als Fachhochschulabschluss)",
+  "general university entrance certificate" = "Ich habe die allgemeine oder fachgebundene Hochschulreife/Abitur (Gymnasium bzw. EOS) ohne abgeschlossenes Hochschul-/ Universitäts-studium",
+  "college (≥ 4 years) or university degree" = "Ich habe ein abgeschlossenes Universitäts-/ Hochschul- bzw. Fachhochschulstudium (bzw. Fachschulabschluss mit Anerkennung als Fachhochschulabschluss)",
+  "Other" = "Ich habe einen anderen Schulabschluss, und zwar:"
+)
+```
+
+# Sexual Orientation (note: participants could select multiple)
+
+```{r}
+summarise_multi_select <- function(df, recode_df, regex_match, demo_name) {
+  summary_df <- df %>% 
+    select(matches(regex_match), ResponseId) %>% 
+    mutate(across(-ResponseId, ~as.numeric(.x))) %>% 
+    pivot_longer(-ResponseId, values_drop_na = TRUE) %>% 
+    select(-value) %>% 
+    mutate(value = as.numeric(str_split_i(name, '_', -1))) %>% 
+    arrange(value) %>% 
+    count(value) %>% 
+    inner_join(recode_df, by = join_by(value==label_value)) %>% 
+    select(Category = label, n) %>% 
+    mutate(prop = round(n / sum(n) * 100, 2))
+
+  summary_df %>%
+    summarise(n = sum(n)) %>% 
+    mutate(Category = demo_name) %>% 
+    bind_rows(summary_df) %>% 
+    select(Category, n, prop)
+}
+```
+
+```{r}
+orientation_recode <- c(`1` = "Heterosexual or straight", `2` = "homosexual, e.g., gay or lesbian", 
+`3` = "bisexual", `4` = "fluid", `5` = "pansexual", `6` = "queer", 
+`7` = "demisexual", `8` = "questioning", `9` = "asexual", `10` = "other [text entry]", 
+`11` = "prefer not to respond")
+
+orientation_recode_df <- data_frame(label=orientation_recode, label_value=as.numeric(names(orientation_recode)))
+```
+
+
+# Disability
+
+```{r}
+disability_recode <- c(
+  "Yes" = "Ja",
+  "No" = "Nein",
+  "Prefer not to say" = "Ich würde lieber nicht antworten."
+)
+
+```
+
+# Disability Type
+
+(Mark all that apply): 1 = a sensory impairment (vision or hearing); 2 = a mobility impairment; 3 = a learning disability (e.g., ADHD, dyslexia); 4 = a disability or impairment not listed above
+
+```{r}
+disability_type_recode_df <- data_frame(
+  label=c(
+    "a sensory impairment (vision or hearing)",
+    "a mobility impairment",
+    "a learning disability (e.g., ADHD, dyslexia)",
+    "a disability or impairment not listed above"
+    ),
+  label_value=1:4
+)
+```
+
+# Mental Health Condition
+
+```{r}
+mental_condition_recode <- c(
+  "Yes"= "Ja - bitte angeben (freiwillig)",
+  "No" = "Nein",
+  "Prefer not to specify" = "Ich würde lieber nicht anworten."
+)
+```
+
+# Religion
+
+Will need translation for Religion
+
+
+# Parenting Status
+
+```{r}
+parenting_status_recode <- c(
+  "No"="Nein",
+  "No, but I am (or my partner is) pregnant or in the process of adopting"="Nein, aber ich (oder mein/e Partner/in) ist schwanger oder im Adoptionsprozess",
+  "Yes"="Ja"
+)
+```
+
+# Relationship Status
+
+
+```{r}
+marital_status_recode <- c(
+  "Widowed" = "Verwitwet",
+  "Married and living together" = "Verheiratet und zusammenlebend",
+  "Single" = "Ledig",
+  "Divorced" = "Geschieden",
+  "Married but living separately" = "Verheiratet und getrennt lebend",
+  "Other" = "Anderweitig (bitte angeben, wenn Sie möchten):",
+  "Domestic partnership" = "Lebensgemeinschaft"
+)
+```
+
+# All dfs
+
+```{r}
+numerical_demo_df <- bind_rows(
+  summarise_numerical(filtered_german_df, "DEM3", "Age"),
+  summarise_numerical(filtered_german_df, "DEM1", "Number of Languages")
+)
+
+
+categorical_demo_df <- bind_rows(
+  summarise_categorical(filtered_german_df, "DEM4", gender_recode, "Gender"),
+  summarise_multi_select(filtered_german_df, orientation_recode_df, "DEM5_\\d+$", "Sexual Orientation"),
+  summarise_categorical(filtered_german_df, "DEM8", education_recode, "Education Level"),
+  summarise_categorical(filtered_german_df, "DEM13_1", c(), "Subjective Perception of Socioeconomic Status"),
+  summarise_categorical(filtered_german_df, "DEM15", disability_recode, "Disability"),
+  summarise_multi_select(filtered_german_df, disability_type_recode_df, "DEM_16_\\d+$", "Disability Type"),
+  summarise_categorical(filtered_german_df, "DEM14", mental_condition_recode, "Mental Health Condition"),
+  summarise_categorical(filtered_german_df, "DEM12", parenting_status_recode, "Parenting Status Condition"),
+  summarise_categorical(filtered_german_df, "DEM9", marital_status_recode, "Relationship Status")
+)
+
+```
+
+```{r}
+numerical_demo_df %>% 
+  write_csv("../results/numerical_demo.csv")
+
+categorical_demo_df %>% 
+  write_csv("../results/categorical_demo.csv")
 ```
 
 
