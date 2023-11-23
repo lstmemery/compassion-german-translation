@@ -238,7 +238,6 @@ categorical_demo_df <- bind_rows(
   summarise_categorical(filtered_german_df, "DEM12", parenting_status_recode, "Parenting Status Condition"),
   summarise_categorical(filtered_german_df, "DEM9", marital_status_recode, "Relationship Status")
 )
-
 ```
 
 ```{r}

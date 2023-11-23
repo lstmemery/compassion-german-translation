@@ -1,0 +1,141 @@
+---
+title: "Descriptive Statistics and Internal Consistency"
+format: html
+editor: visual
+---
+
+## Quarto
+
+```{r}
+library(tidyverse)
+library(haven)
+library(feather)
+library(psych)
+```
+
+```{r}
+german_df <- read_sav("../data/Compassion-DE_19 November 2023_19.42.sav")
+```
+
+```{r}
+filtered_german_df <- german_df %>% 
+  filter(SOCS_O_10 == 4) %>% 
+  filter(CEAS_TO1_4 == 10) %>% 
+  filter(SCS_19 == 1) %>%
+  filter(FFMQ_21 == 4)
+
+filtered_german_df
+```
+
+```{r}
+ecr_anxiety_items <-c(1, 2, 5, 8, 10, 11)
+ecr_avoidance_items <- c(3, 4, 6, 7, 9, 12)
+scs_negative_items <- c(1, 8, 11, 16, 21, 2, 6, 20, 24, 4, 13, 18, 25)
+scs_positive_items <- c(3, 7, 10, 15, 5, 12, 19, 23, 26, 9, 14, 17, 22)
+
+```
+
+```{r}
+tidy_german_df <- filtered_german_df %>% 
+  select(
+    ResponseId, 
+    matches("^(SOCS)|(WEMWBS)|(CEAS)|(PHQ)|(SCS)|(IRI)|(FFMQ)|(PSS)|(ECR)")
+    ) %>% 
+  mutate(across(-ResponseId, as.numeric)) %>% 
+  pivot_longer(-ResponseId) %>% 
+  mutate(
+    scale = str_split_i(name, '_', 1),
+    subscale = str_extract(name, '_([:alnum:]+)_', group=1),
+    item_number = as.numeric(str_split_i(name, '_', -1))
+  ) %>% 
+  filter(!name %in% c("SOCS_O_10", "CEAS_TO1_4", "SCS_19", "FFMQ_21")) %>% 
+  mutate(item_number = case_when(
+    scale == "SOCS" & subscale == "O" & item_number > 10 ~ item_number - 1,
+    scale == "CEAS" & subscale == "TO1" & item_number > 4 ~ item_number - 1,
+    scale == "SCS" & item_number > 19 ~ item_number - 1,
+    scale == "FFMQ" & item_number > 21 ~ item_number - 1,
+    TRUE ~ item_number
+  )) %>% 
+  mutate(name = if_else(
+    is.na(subscale), 
+    str_c(scale, item_number, sep = "_"),
+    str_c(scale, subscale, item_number, sep = "_")
+    )) %>% 
+  mutate(
+    scale = case_when(
+      scale == "SOCS" ~ str_c(scale, subscale, sep = "_"),
+      scale == "CEAS" ~ str_c(scale, str_extract(subscale, "[A-Z]+"), sep = "_"),
+      scale == "ECR" & item_number %in% ecr_anxiety_items ~ "ECR_Anxiety",
+      scale == "ECR" & item_number %in% ecr_avoidance_items ~ "ECR_Avoidance",
+      scale == "SCS" & item_number %in% scs_negative ~ "SCS_Negative",
+      scale == "SCS" & item_number %in% scs_positive ~ "SCS_Positive",
+      TRUE~ scale
+    )
+  )
+```
+
+```{r}
+write_feather(tidy_german_df, "../results/tidy_responses.feather")
+```
+
+# Reverse Coding
+
+```{r}
+reverse_code_items <- c(
+  "FFMQ_3", "FFMQ_5", "FFMQ_7", "FFMQ_8", "FFMQ_10",
+  "FFMQ_15", "FFMQ_19", "FFMQ_23", "PSS_4", "PSS_5",
+  "PSS_7", "PSS_8", "ECR_3", "ECR_4", "ECR_9", "ECR_12"
+)
+
+rc_tidy_german_df <- tidy_german_df %>% 
+  mutate(value = case_when(
+    name %in% reverse_code_items & scale == "FFMQ" ~ 6 - value,
+    name %in% reverse_code_items & scale == "PSS" ~ 4 - value,
+    name %in% reverse_code_items & scale == "ECR" ~ 8 - value,
+    TRUE ~ value
+  ))
+
+write_feather(rc_tidy_german_df, "../results/rc_tidy_responses.feather")
+  
+```
+
+# Complete Cases
+
+```{r}
+complete_cases <- rc_tidy_german_df %>% 
+  group_by(ResponseId, scale) %>% 
+  summarise(complete = !any(is.na(value))) %>% 
+  filter(complete == TRUE)
+  
+complete_tidy_german_df <- rc_tidy_german_df %>% 
+  semi_join(complete_cases, join_by(ResponseId, scale))
+
+write_feather(complete_tidy_german_df, "../results/complete_tidy_responses.feather")
+
+```
+
+# Scale Correlations
+
+```{r}
+wide_scale_sum_df <- complete_tidy_german_df %>% 
+  group_by(ResponseId, scale) %>% 
+  summarise(scale_score = sum(value)) %>% 
+  pivot_wider(id_cols = ResponseId, names_from = "scale", values_from = "scale_score") %>% 
+  ungroup()
+```
+
+```{r}
+scale_correlations <- wide_scale_sum_df %>% 
+  select(-ResponseId) %>% 
+  corr.test(adjust = "BH")
+```
+
+```{r}
+scale_stars <- scale_correlations$stars %>% 
+  as_tibble() %>% 
+  mutate(Scale = colnames(scale_correlations$stars), .before=everything())
+```
+
+```{r}
+write_csv(scale_stars, "../results/scale_correlation.csv")
+```
