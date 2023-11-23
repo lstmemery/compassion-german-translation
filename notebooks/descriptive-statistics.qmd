@@ -32,6 +32,11 @@ ecr_anxiety_items <-c(1, 2, 5, 8, 10, 11)
 ecr_avoidance_items <- c(3, 4, 6, 7, 9, 12)
 scs_negative_items <- c(1, 8, 11, 16, 21, 2, 6, 20, 24, 4, 13, 18, 25)
 scs_positive_items <- c(3, 7, 10, 15, 5, 12, 19, 23, 26, 9, 14, 17, 22)
+socs_recognizing_suffering_items <- c(1, 6, 11, 16)
+socs_universality_of_suffering_items <- c(2, 7, 12, 17)
+socs_feeling_of_suffering_items <- c(3, 8, 13, 18)
+socs_tolerating_discomfort_items <- c(4, 9, 14, 19)
+socs_alleviate_suffering_items <- c(5, 10, 15, 20)
 
 ```
 
@@ -70,6 +75,14 @@ tidy_german_df <- filtered_german_df %>%
       scale == "SCS" & item_number %in% scs_negative ~ "SCS_Negative",
       scale == "SCS" & item_number %in% scs_positive ~ "SCS_Positive",
       TRUE~ scale
+    ),
+    subscale = case_when(
+      str_detect(scale, "^SOCS") & item_number %in% socs_recognizing_suffering_items ~ "Recognizing_Suffering",
+      str_detect(scale, "^SOCS") & item_number %in% socs_universality_of_suffering_items ~ "Universality_of_Suffering",
+      str_detect(scale, "^SOCS") & item_number %in% socs_feeling_of_suffering_items ~ "Feeling_of_Suffering",
+      str_detect(scale, "^SOCS") & item_number %in% socs_tolerating_discomfort_items ~ "Tolerating_Discomfort",
+      str_detect(scale, "^SOCS") & item_number %in% socs_alleviate_suffering_items ~ "Alleviate_Suffering",
+      TRUE ~ subscale
     )
   )
 ```
@@ -117,10 +130,17 @@ write_feather(complete_tidy_german_df, "../results/complete_tidy_responses.feath
 # Scale Correlations
 
 ```{r}
+scale_order_vector <- items_vector <- c(
+  "CEAS_SC", "CEAS_TO", "CEAS_FROM", "SOCS_S", "SOCS_O", "SCS_Positive",
+  "SCS_Negative", "ECR_Anxiety", "ECR_Avoidance", "FFMQ", "IRI", "PHQ",
+  "PSS", "WEMWBS"
+)
+
 wide_scale_sum_df <- complete_tidy_german_df %>% 
   group_by(ResponseId, scale) %>% 
   summarise(scale_score = sum(value)) %>% 
   pivot_wider(id_cols = ResponseId, names_from = "scale", values_from = "scale_score") %>% 
+  relocate(any_of(scale_order_vector)) %>% 
   ungroup()
 ```
 
@@ -138,4 +158,53 @@ scale_stars <- scale_correlations$stars %>%
 
 ```{r}
 write_csv(scale_stars, "../results/scale_correlation.csv")
+```
+
+# Subscale Correlations 
+
+```{r}
+wide_subscale_sum_df <- complete_tidy_german_df %>% 
+  group_by(ResponseId, scale, subscale) %>% 
+  summarise(subscale_score = sum(value)) %>% 
+  mutate(subscale_name = str_c(scale, str_replace_na(subscale, ""), sep="_")) %>% 
+  mutate(subscale_name = str_replace(subscale_name, "_$", "")) %>% 
+  pivot_wider(id_cols = ResponseId, names_from = "subscale_name", values_from = "subscale_score") %>%     mutate(
+    CEAS_FROM = sum(across(starts_with("CEAS_FROM"))),
+    CEAS_SC = sum(across(starts_with("CEAS_SC"))),
+    CEAS_TO = sum(across(starts_with("CEAS_TO"))),
+    SOCS_O = sum(across(starts_with("SOCS_O"))),
+    SOCS_S = sum(across(starts_with("SOCS_S")))
+  ) %>%
+  relocate(
+    ResponseId,
+    CEAS_SC,
+    starts_with("CEAS_SC"), 
+    CEAS_TO,
+    starts_with("CEAS_TO"),
+    CEAS_FROM,
+    starts_with("CEAS_FROM"),
+    SOCS_S,
+    starts_with("SOCS_S"),
+    SOCS_O,
+    starts_with("SOCS_O"),
+    starts_with("SCS")
+  ) %>% 
+  ungroup()
+  
+```
+
+```{r}
+subscale_correlations <- wide_subscale_sum_df %>% 
+  select(-ResponseId) %>% 
+  corr.test(adjust = "BH")
+```
+
+```{r}
+subscale_stars <- subscale_correlations$stars %>% 
+  as_tibble() %>% 
+  mutate(Scale = colnames(subscale_correlations$stars), .before=everything())
+```
+
+```{r}
+write_csv(scale_stars, "../results/subscale_correlation.csv")
 ```
