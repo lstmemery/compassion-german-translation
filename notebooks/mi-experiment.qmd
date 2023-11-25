@@ -1,0 +1,63 @@
+---
+title: "Multiple Imputation Experiment"
+format: html
+editor: visual
+---
+
+# Imports
+
+```{r}
+library(tidyverse)
+library(haven)
+library(feather)
+library(mice)
+```
+
+```{r}
+german_df <- read_sav("../data/Compassion-DE_19 November 2023_19.42.sav")
+```
+
+```{r}
+filtered_german_df <- german_df %>% 
+  filter(SOCS_O_10 == 4 | is.na(SOCS_O_10)) %>% 
+  filter(CEAS_TO1_4 == 10 | is.na(CEAS_TO1_4)) %>% 
+  filter(SCS_19 == 1 | is.na(SCS_19)) %>%
+  filter(FFMQ_21 == 4 | is.na(FFMQ_21)) %>% 
+  filter(Progress > 10) %>% 
+  select(-SOCS_O_10, -CEAS_TO1_4, -SCS_19, -FFMQ_21)
+```
+
+```{r}
+non_singular_df <- filtered_german_df %>% 
+  mutate(across(where(is.labelled), ~as_factor(., ordered=TRUE))) %>% 
+  select(
+    matches("^(SOCS)|(WEMWBS)|(CEAS)|(PHQ)|(SCS)|(IRI)|(FFMQ)|(PSS)|(ECR)")
+    )
+```
+
+```{r}
+diag_mice <- mice(non_singular_df, maxit=0)
+```
+
+```{r}
+diag_mice$loggedEvents
+```
+
+```{r}
+mi_filtered_german_df <- futuremice(
+  non_singular_df, 
+  parallelseed=1,
+  n.core = 5,
+  method = "pmm",
+  pred = quickpred(non_singular_df)
+)
+```
+
+```{r}
+saveRDS(mi_filtered_german_df, '../results/mi-df.sav')
+```
+
+```{r}
+complete(mi_filtered_german_df, 2) %>% 
+  mutate(across(everything(), as.numeric))
+```

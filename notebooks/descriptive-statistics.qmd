@@ -160,7 +160,7 @@ scale_stars <- scale_correlations$stars %>%
 write_csv(scale_stars, "../results/scale_correlation.csv")
 ```
 
-# Subscale Correlations 
+# Subscale Correlations
 
 ```{r}
 wide_subscale_sum_df <- complete_tidy_german_df %>% 
@@ -207,4 +207,81 @@ subscale_stars <- subscale_correlations$stars %>%
 
 ```{r}
 write_csv(scale_stars, "../results/subscale_correlation.csv")
+```
+
+# Descriptive Statistics and Internal Consistency
+
+```{r}
+descriptives_df <- wide_subscale_sum_df %>% 
+  pivot_longer(-ResponseId, values_drop_na=TRUE) %>% 
+  group_by(name) %>% 
+  summarise(
+    scale_mean = round(mean(value), 2),
+    scale_sd = round(sd(value, 2)),
+    scale_min = min(value),
+    scale_max = max(value)
+    )
+```
+
+```{r}
+write_csv(descriptives_df, "../results/descriptive-statistics.csv")
+```
+
+# Alphas
+
+```{r}
+scale_split_dfs <- complete_tidy_german_df %>% 
+  group_by(scale) %>%
+  group_split()
+```
+
+```{r}
+get_alpha <- function(df, column_name) {
+  alpha_df <- df %>%
+    pivot_wider(values_from = value, id_cols = ResponseId, names_from = name) %>% 
+    drop_na() %>% 
+    select(-ResponseId) %>% 
+    alpha() 
+  
+  data_frame(
+    scale = df[[column_name]][[1]],
+    alpha = round(alpha_df[["total"]][["raw_alpha"]], 2)
+  )
+}
+
+```
+
+```{r}
+scale_alpha_df <- map_df(scale_split_dfs, ~get_alpha(., "scale"))
+```
+
+```{r}
+write_csv(scale_alpha_df, "../results/scale-alphas.csv")
+```
+
+## Subscale Alphas
+
+```{r}
+subscale_split_dfs <- complete_tidy_german_df %>% 
+  filter(!is.na(subscale)) %>% 
+  mutate(scale_subscale = str_c(scale, subscale, sep="_")) %>% 
+  group_by(scale_subscale) %>% 
+  group_split()
+```
+
+```{r}
+subscale_alpha_df <- map_df(subscale_split_dfs, ~get_alpha(., "scale_subscale"))
+```
+
+```{r}
+write_csv(subscale_alpha_df, "../results/subscale-alphas.csv")
+```
+
+```{r}
+scale_alpha_df %>% 
+  bind_rows(subscale_alpha_df)
+```
+
+```{r}
+readRDS("../results/mi-df.sav")
 ```
