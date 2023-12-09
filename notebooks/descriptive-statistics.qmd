@@ -72,8 +72,8 @@ tidy_german_df <- filtered_german_df %>%
       scale == "CEAS" ~ str_c(scale, str_extract(subscale, "[A-Z]+"), sep = "_"),
       scale == "ECR" & item_number %in% ecr_anxiety_items ~ "ECR_Anxiety",
       scale == "ECR" & item_number %in% ecr_avoidance_items ~ "ECR_Avoidance",
-      scale == "SCS" & item_number %in% scs_negative ~ "SCS_Negative",
-      scale == "SCS" & item_number %in% scs_positive ~ "SCS_Positive",
+      scale == "SCS" & item_number %in% scs_negative_items ~ "SCS_Negative",
+      scale == "SCS" & item_number %in% scs_positive_items ~ "SCS_Positive",
       TRUE~ scale
     ),
     subscale = case_when(
@@ -97,14 +97,14 @@ write_feather(tidy_german_df, "../results/tidy_responses.feather")
 reverse_code_items <- c(
   "FFMQ_3", "FFMQ_5", "FFMQ_7", "FFMQ_8", "FFMQ_10",
   "FFMQ_15", "FFMQ_19", "FFMQ_23", "PSS_4", "PSS_5",
-  "PSS_7", "PSS_8", "ECR_3", "ECR_4", "ECR_9", "ECR_12"
+  "PSS_7", "PSS_8","ECR_3", "ECR_4", "ECR_9", "ECR_12"
 )
 
 rc_tidy_german_df <- tidy_german_df %>% 
   mutate(value = case_when(
     name %in% reverse_code_items & scale == "FFMQ" ~ 6 - value,
     name %in% reverse_code_items & scale == "PSS" ~ 4 - value,
-    name %in% reverse_code_items & scale == "ECR" ~ 8 - value,
+    name %in% reverse_code_items & scale == "ECR_Avoidance" ~ 8 - value,
     TRUE ~ value
   ))
 
@@ -140,6 +140,12 @@ wide_scale_sum_df <- complete_tidy_german_df %>%
   group_by(ResponseId, scale) %>% 
   summarise(scale_score = sum(value)) %>% 
   pivot_wider(id_cols = ResponseId, names_from = "scale", values_from = "scale_score") %>% 
+  mutate(
+    SCS_Positive = SCS_Positive / 13,
+    SCS_Negative = SCS_Negative / 13,
+    FFMQ = FFMQ / 23,
+    IRI = IRI / 4 
+    ) %>% 
   relocate(any_of(scale_order_vector)) %>% 
   ungroup()
 ```
@@ -175,6 +181,12 @@ wide_subscale_sum_df <- complete_tidy_german_df %>%
     SOCS_O = sum(across(starts_with("SOCS_O"))),
     SOCS_S = sum(across(starts_with("SOCS_S")))
   ) %>%
+  mutate(
+    SCS_Positive = SCS_Positive / 13,
+    SCS_Negative = SCS_Negative / 13,
+    FFMQ = FFMQ / 23,
+    IRI = IRI / 4 
+    ) %>% 
   relocate(
     ResponseId,
     CEAS_SC,
@@ -283,5 +295,5 @@ scale_alpha_df %>%
 ```
 
 ```{r}
-readRDS("../results/mi-df.sav")
+write_csv(subscale_alpha_df, "../results/scale-alphas.csv")
 ```

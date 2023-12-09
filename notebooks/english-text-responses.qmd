@@ -1,0 +1,79 @@
+---
+title: "Text Responses"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+df <- read_csv("../data/german-complete-cases_Alan edit.csv")
+```
+
+```{r}
+tidy_english_df <- df %>% 
+  filter(!is.na(Finished)) %>% 
+  select(ResponseId, ends_with("CODED")) %>% 
+  mutate(across(-ResponseId, ~if_else(. == 999, NA_real_, .))) %>% 
+  pivot_longer(-ResponseId, values_drop_na = TRUE) %>% 
+  mutate(value = case_when(
+    name == "DEM4_3_TEXT_CODED" & value == 1 ~ "Non-Binary",
+    name == "DEM4_3_TEXT_CODED" & value == 2 ~ "Woman",
+    name == "DEM4_3_TEXT_CODED" & value == 3 ~ "Other",
+    name == "DEM5_10_TEXT_CODED" & value == 1 ~ "Homoromantic",
+    name == "DEM5_10_TEXT_CODED" & value == 2 ~ "Aromantic",
+    name == "DEM5_10_TEXT_CODED" & value == 3 ~ "Super Straight",
+    name == "DEM5_10_TEXT_CODED" & value == 4 ~ "Non-Binary",
+    name == "DEM5_10_TEXT_CODED" & value == 5 ~ "No Category",
+    name == "DEM5_10_TEXT_CODED" & value == 6 ~ "Other",
+    name == "DEM6_CODED" & value == 1 ~ "European",
+    name == "DEM6_CODED" & value == 2 ~ "Asian",
+    name == "DEM6_CODED" & value == 3 ~ "German-Turkish",
+    name == "DEM6_CODED" & value == 4 ~ "Mixed",
+    name == "DEM6_CODED" & value == 5 ~ "Other",
+    name == "DEM6_CODED" & value == 6 ~ "Latin American"
+  ))
+```
+
+```{r}
+write_csv(tidy_english_df, "../results/tidy_english_responses.csv")
+```
+
+```{r}
+summarise_categorical <- function(df, column_name) {
+  summary_df <- df %>%
+    filter(name == column_name) %>% 
+    count(value) %>% 
+    mutate(prop = round(n/sum(n) * 100, 2))
+
+  
+  total_df <- summary_df %>% 
+    summarise(n = sum(n))
+  
+  bind_rows(
+    total_df,
+    summary_df
+  ) %>% 
+    select(value, n, prop)
+}
+```
+
+```{r}
+dem6 <- summarise_categorical(tidy_english_df, "DEM6_CODED")
+write_csv(dem6, "../results/dem6.csv")
+dem6
+```
+
+```{r}
+dem4 <- summarise_categorical(tidy_english_df, "DEM4_3_TEXT_CODED")
+write_csv(dem4, "../results/dem4.csv")
+dem4
+```
+
+```{r}
+dem5 <- summarise_categorical(tidy_english_df, "DEM5_10_TEXT_CODED")
+write_csv(dem5, "../results/dem5.csv")
+dem5
+```

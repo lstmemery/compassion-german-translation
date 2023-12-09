@@ -15,6 +15,7 @@ library(jtools)
 library(lavaan)
 library(broom)
 library(huxtable)
+library(purrr)
 ```
 
 ```{r}
@@ -144,6 +145,39 @@ ceas_from_df <- filtered_german_df %>%
 ```{r}
 ceas_from_df %>% 
   write_feather("../results/ceas_from_tidy.feather")
+```
+
+## Ceiling/Floor Effects
+
+```{r}
+calculate_ceiling_floor_effects <- function(df, min_value, max_value) {
+  min_maxed <- df %>% 
+    group_by(ResponseId) %>% 
+    summarise(total_score = sum(response)) %>% 
+    filter(total_score %in% c(min_value, max_value)) %>% 
+    count() %>% 
+    pull()
+  
+  total <- df %>% 
+    count(ResponseId) %>% 
+    count() %>% 
+    pull()
+  
+  min_maxed / total
+}
+
+```
+
+```{r}
+calculate_ceiling_floor_effects(socs_o_df, 20, 100)
+```
+
+```{r}
+dfs <- list(socs_o_df, socs_s_df, ceas_from_df, ceas_sc_df, ceas_to_df)
+mins <- list(20, 20, 10, 10, 10)
+maxes <- list(100, 100, 100, 100, 100)
+
+pmap(list(dfs, mins, maxes), calculate_ceiling_floor_effects)
 ```
 
 ## Session Information

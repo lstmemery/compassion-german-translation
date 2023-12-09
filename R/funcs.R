@@ -184,3 +184,4 @@ report_fit_chi <- function(cfa_fit) {
     cfa_fit, 
     metrics=c("Chi2", "Chi2_df", "p_Chi2", "NNFI", "CFI"))
 }
+
