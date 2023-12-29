@@ -75,9 +75,10 @@ summarise_categorical <- function(df, column_name, recode_vector, demo_name) {
   summary_df <- df %>%
     mutate(!!demo_sym := as_factor(!!column_sym, ordered=TRUE)) %>%
     mutate(Category := fct_recode(!!demo_sym, !!!recode_vector)) %>% 
-    filter(!is.na(Category)) %>% 
     count(Category) %>% 
-    mutate(prop = round(n/sum(n) * 100, 2))
+    mutate(prop = round(n/sum(n) * 100, 2)) %>% 
+    mutate(Category = as.character(Category)) %>% 
+    replace_na(list(Category="No Response"))
   
   total_df <- summary_df %>% 
     summarise(n := sum(n)) %>% 
@@ -130,7 +131,17 @@ summarise_multi_select <- function(df, recode_df, regex_match, demo_name) {
     arrange(value) %>% 
     count(value) %>% 
     inner_join(recode_df, by = join_by(value==label_value)) %>% 
-    select(Category = label, n) %>% 
+    select(Category = label, n)
+
+  
+  no_response_df <- df %>% 
+    select(matches(regex_match), ResponseId) %>% 
+    filter(if_all(-ResponseId, is.na)) %>% 
+    count() %>% 
+    mutate(Category = "No Response")
+  
+  summary_df <- summary_df %>% 
+    bind_rows(no_response_df) %>% 
     mutate(prop = round(n / sum(n) * 100, 2))
 
   summary_df %>%
@@ -218,6 +229,16 @@ marital_status_recode <- c(
 )
 ```
 
+# Mother Tongue
+
+```{r}
+mother_tongue_recode <- c(
+  "Yes" = "Ja",
+  "No" = "Nein"
+)
+```
+
+
 # All dfs
 
 ```{r}
@@ -236,7 +257,8 @@ categorical_demo_df <- bind_rows(
   summarise_multi_select(filtered_german_df, disability_type_recode_df, "DEM_16_\\d+$", "Disability Type"),
   summarise_categorical(filtered_german_df, "DEM14", mental_condition_recode, "Mental Health Condition"),
   summarise_categorical(filtered_german_df, "DEM12", parenting_status_recode, "Parenting Status Condition"),
-  summarise_categorical(filtered_german_df, "DEM9", marital_status_recode, "Relationship Status")
+  summarise_categorical(filtered_german_df, "DEM9", marital_status_recode, "Relationship Status"),
+  summarise_categorical(filtered_german_df, "DEM2", mother_tongue_recode, "Mother Tongue")
 )
 ```
 
@@ -245,8 +267,15 @@ numerical_demo_df %>%
   write_csv("../results/numerical_demo.csv")
 
 categorical_demo_df %>% 
-  write_csv("../results/categorical_demo.csv")
+  write_csv("../results/categorical_demo_no_missing.csv")
 ```
+
+```{r}
+filtered_german_df %>% 
+  select(DEM2) %>% 
+  mutate(labelled = as_factor(DEM2, ordered=TRUE))
+```
+
 
 
 ```{r}
