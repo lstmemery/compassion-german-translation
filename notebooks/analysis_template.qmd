@@ -102,6 +102,31 @@ omegas <- get_omegas(cfa_fit)
 omegas
 ```
 
+## Invariance Analysis
+
+```{r}
+demo_df <- read_feather("../results/demographics.feather")
+invariance_df <- df %>% 
+  inner_join(demo_df, "ResponseId")
+
+gender_df <- invariance_df %>% 
+  filter(Gender %in% c("Female", "Male"))
+
+test_measurement_invariance(model_string, gender_df, "Gender")
+```
+
+```{r}
+test_measurement_invariance(model_string, invariance_df, "Above_46")
+```
+
+```{r}
+edu_df <- invariance_df %>% 
+  filter(!is.na(Education_Level)) %>% 
+  mutate(Education_Level = if_else(Education_Level %in% c("3 years technical college", "college (≥ 4 years) or university degree"), "Completed Post-Secondary", "Did Not Complete Post-Secondary"))
+
+test_measurement_invariance(model_string, edu_df, "Education_Level")
+```
+
 ## Session Information
 
 ```{r}

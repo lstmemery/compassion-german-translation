@@ -1,0 +1,27 @@
+---
+title: "Data Cleaning"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(haven)
+```
+
+```{r}
+german_df <- read_sav("data/Compassion-DE_19 November 2023_19.42.sav")
+```
+
+```{r}
+removed_column_df <- german_df %>% 
+  select(-DEM10, -DEM10_1_TEXT, -DEM14, -DEM14_1_TEXT)
+```
+
+```{r}
+write_sav(removed_column_df, "results/Compassion-DE_19 November 2023_19.42.sav")
+```
+
+```{r}
+read_sav("results//Compassion-DE_19 November 2023_19.42.sav")
+```

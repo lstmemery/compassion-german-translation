@@ -185,3 +185,7 @@ report_fit_chi <- function(cfa_fit) {
     metrics=c("Chi2", "Chi2_df", "p_Chi2", "NNFI", "CFI"))
 }
 
+test_measurement_invariance <- function(model_string, df, group_name) {
+  tryCatch(expr=measurementInvariance(model=model_string, estimator="MLR", data=df, group=group_name, std.lv = TRUE), error = function(cond) "error")
+}
+

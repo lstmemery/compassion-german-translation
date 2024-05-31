@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(tidyverse)
 library(haven)
+library(feather)
 ```
 
 
@@ -95,7 +96,7 @@ summarise_categorical <- function(df, column_name, recode_vector, demo_name) {
 
 ```{r}
 gender_recode <- c(Male="Mann",
-      Woman="Frau",
+      Female="Frau",
       Other="von mir präferierte Bezeichnung",
       Other="bevorzuge nicht zu antworten"
     )
@@ -276,6 +277,61 @@ filtered_german_df %>%
   mutate(labelled = as_factor(DEM2, ordered=TRUE))
 ```
 
+
+```{r}
+complete_tidy_german_df <- read_feather("../results/complete_tidy_responses.feather")
+```
+
+```{r}
+scale_order_vector <- items_vector <- c(
+  "CEAS_SC", "CEAS_TO", "CEAS_FROM", "SOCS_S", "SOCS_O", "SCS_Positive",
+  "SCS_Negative", "ECR_Anxiety", "ECR_Avoidance", "FFMQ", "IRI", "PHQ",
+  "PSS", "WEMWBS"
+)
+
+wide_scale_sum_df <- complete_tidy_german_df %>% 
+  group_by(ResponseId, scale) %>% 
+  summarise(scale_score = sum(value)) %>% 
+  pivot_wider(id_cols = ResponseId, names_from = "scale", values_from = "scale_score") %>% 
+  mutate(
+    SCS_Positive = SCS_Positive / 13,
+    SCS_Negative = SCS_Negative / 13,
+    FFMQ = FFMQ / 23,
+    IRI = IRI / 4 
+    ) %>% 
+  relocate(any_of(scale_order_vector)) %>% 
+  ungroup()
+```
+
+```{r}
+merged_scale_test_df <- filtered_german_df %>% 
+  inner_join(wide_scale_sum_df, by="ResponseId")
+  
+```
+
+```{r}
+two_gender_df <- merged_scale_test_df %>% 
+  filter(DEM4 %in% c(1, 2))
+```
+
+
+
+```{r}
+demo_df <- filtered_german_df %>% 
+  mutate(
+    ResponseId=ResponseId,
+    Above_46=DEM3 > median(DEM3),
+    Number_of_Languages=DEM1,
+    Gender=fct_recode(as_factor(DEM4, ordered=TRUE), !!!gender_recode),
+    Education_Level=fct_recode(as_factor(DEM8, ordered=TRUE), !!!education_recode),
+    .keep = "none"
+  ) 
+```
+
+
+```{r}
+write_feather(demo_df, "../results/demographics.feather")
+```
 
 
 ```{r}
