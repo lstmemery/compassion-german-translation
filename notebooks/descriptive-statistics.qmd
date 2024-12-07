@@ -25,7 +25,7 @@ filtered_german_df <- german_df %>%
 filtered_german_df
 ```
 
-```{r}
+```{r}test_measurement_invariance(model_string, invariance_df, "Above_46")}
 ecr_anxiety_items <-c(1, 2, 5, 8, 10, 11)
 ecr_avoidance_items <- c(3, 4, 6, 7, 9, 12)
 scs_negative_items <- c(1, 8, 11, 16, 21, 2, 6, 20, 24, 4, 13, 18, 25)

@@ -5,8 +5,8 @@ editor: visual
 execute: 
   echo: false
 params:
-  data: "../results/ceas_to_tidy.feather"
-  model: "../models/ceas_to_hierarchical.json"
+  data: "../results/ceas_sc_tidy.feather"
+  model: "../models/ceas_sc_bifactor.json"
 ---
 
 ```{r, echo=FALSE, message=FALSE}
@@ -104,6 +104,8 @@ omegas
 
 ## Invariance Analysis
 
+### Gender
+
 ```{r}
 demo_df <- read_feather("../results/demographics.feather")
 invariance_df <- df %>% 
@@ -115,9 +117,13 @@ gender_df <- invariance_df %>%
 test_measurement_invariance(model_string, gender_df, "Gender")
 ```
 
+### Age
+
 ```{r}
 test_measurement_invariance(model_string, invariance_df, "Above_46")
 ```
+
+### Education Level
 
 ```{r}
 edu_df <- invariance_df %>% 

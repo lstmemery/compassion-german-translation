@@ -180,6 +180,51 @@ maxes <- list(100, 100, 100, 100, 100)
 pmap(list(dfs, mins, maxes), calculate_ceiling_floor_effects)
 ```
 
+```{r}
+socs_o_df %>% 
+  count(item, response) %>% 
+  group_by(item) %>% 
+  mutate(total = sum(n)) %>% 
+  mutate(prop = n/total) %>% 
+  filter(prop < 0.01)
+```
+
+```{r}
+socs_s_df %>% 
+  count(item, response) %>% 
+  group_by(item) %>% 
+  mutate(total = sum(n)) %>% 
+  mutate(prop = n/total) %>% 
+  filter(prop < 0.01)
+```
+
+```{r}
+ceas_from_df %>% 
+  count(item, response) %>% 
+  group_by(item) %>% 
+  mutate(total = sum(n)) %>% 
+  mutate(prop = n/total) %>% 
+  filter(prop < 0.01)
+```
+
+```{r}
+ceas_to_df %>% 
+  count(item, response) %>% 
+  group_by(item) %>% 
+  mutate(total = sum(n)) %>% 
+  mutate(prop = n/total) %>% 
+  filter(prop < 0.01)
+```
+
+```{r}
+ceas_sc_df %>% 
+    count(item, response) %>% 
+  group_by(item) %>% 
+  mutate(total = sum(n)) %>% 
+  mutate(prop = n/total) %>% 
+  filter(prop < 0.01)
+```
+
 ## Session Information
 
 ```{r}

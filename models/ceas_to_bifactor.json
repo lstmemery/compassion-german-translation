@@ -1,0 +1,5 @@
+{
+	"scale_name": "CEAS-TO",
+	"model_name": "Bifactor",
+	"model_string": "CEAS_TO_General =~ CEAS_TO1_1 + CEAS_TO1_2 + CEAS_TO1_3 + CEAS_TO1_4 + CEAS_TO1_5 + CEAS_TO1_6 + CEAS_TO2_1 + CEAS_TO2_2 + CEAS_TO2_3 + CEAS_TO2_4; CEAS_TO_Engagement =~ CEAS_TO1_1 + CEAS_TO1_2 + CEAS_TO1_3 + CEAS_TO1_4 + CEAS_TO1_5 + CEAS_TO1_6; CEAS_TO_Action =~ CEAS_TO2_1 + CEAS_TO2_2 + CEAS_TO2_3 + CEAS_TO2_4; CEAS_TO_Engagement ~~ 0*CEAS_TO_General; CEAS_TO_Action ~~ 0*CEAS_TO_General; CEAS_TO_Engagement ~~ 0*CEAS_TO_Action"
+}
